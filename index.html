@@ -294,7 +294,7 @@
                             <div class="folder-count">${count} 个书签</div>
                         </div>
                     </div>
-                    <button class="folder-edit-icon" data-id="${cat.id}">✏️</button>
+                    <button class="folder-edit-icon" data-id="${cat.id}"><span class="pencil-left">✏️</span></button>
                 </div>
             `;
             row.addEventListener('click', (e) => {
@@ -339,7 +339,7 @@
             filtered.forEach(book => {
                 const card = document.createElement('div');
                 card.className = 'bookmark-card';
-                card.innerHTML = `<div class="bookmark-icon"></div><div class="bookmark-info"><div class="bookmark-title"><a href="${escapeHtml(book.url)}" target="_blank">${escapeHtml(book.title)}</a></div><div class="bookmark-desc">${book.description || '暂无描述'}</div></div><div class="bookmark-edit-icon" data-id="${book.id}">✏️</div>`;
+                card.innerHTML = `<div class="bookmark-icon"></div><div class="bookmark-info"><div class="bookmark-title"><a href="${escapeHtml(book.url)}" target="_blank">${escapeHtml(book.title)}</a></div><div class="bookmark-desc">${book.description || '暂无描述'}</div></div><div class="bookmark-edit-icon" data-id="${book.id}"><span class="pencil-left">✏️</span></div>`;
                 grid.appendChild(card);
                 loadBookmarkIcon(card, book);
                 card.querySelector('.bookmark-edit-icon').addEventListener('click', (e) => { e.stopPropagation(); openBookmarkModal(book.id); });
