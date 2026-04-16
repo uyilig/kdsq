@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=1.0">
-    <title>口袋书签 | 拖动排序 + 极简详情</title>
+    <title>口袋书签 | 支持备份还原</title>
     <style>
         * {
             margin: 0;
@@ -11,8 +11,6 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
-
-        /* 清新浅色主题 */
         :root {
             --bg-page: #f5f5f7;
             --bg-surface: #ffffff;
@@ -24,13 +22,10 @@
             --text-muted: #8e8e93;
             --border-light: #e5e5ea;
             --accent: #007aff;
-            --accent-hover: #005fc1;
             --danger: #ff3b30;
             --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
             --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --drag-over: #e0e7ff;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-page);
@@ -39,446 +34,99 @@
             padding: 16px 12px;
             padding-bottom: 40px;
         }
-
-        .app-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* 头部导航栏 */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 8px 0;
-        }
-        .logo-area h1 {
-            font-size: 1.7rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, var(--accent), #5e5ce0);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            letter-spacing: -0.5px;
-        }
-        .header-actions {
-            display: flex;
-            gap: 12px;
-        }
-        .icon-btn {
-            background: var(--bg-surface);
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            cursor: pointer;
-            box-shadow: var(--shadow-sm);
-            color: var(--accent);
-            border: 0.5px solid var(--border-light);
-            transition: all 0.1s;
-        }
-        .icon-btn:active {
-            transform: scale(0.94);
-            background: var(--bg-hover);
-        }
-
-        /* 文件夹列表 - 垂直拖动 */
-        .folders-list {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            margin-bottom: 28px;
-        }
-        .folder-row {
-            background: var(--bg-folder-card);
-            border-radius: 18px;
-            border: 0.5px solid var(--border-light);
-            padding: 14px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            box-shadow: var(--shadow-sm);
-            user-select: none;
-        }
-        .folder-row.dragging {
-            opacity: 0.4;
-            cursor: grabbing;
-        }
-        .folder-row.drag-over {
-            border-top: 2px solid var(--accent);
-            margin-top: -2px;
-        }
-        .folder-row:active {
-            transform: scale(0.98);
-        }
-        .folder-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex: 1;
-        }
-        /* 拖拽把手 (编辑模式下显示) */
-        .drag-handle {
-            display: none;
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            cursor: grab;
-            margin-right: 6px;
-            touch-action: none;
-        }
-        body.edit-mode .drag-handle {
-            display: block;
-        }
-        body.edit-mode .drag-handle:active {
-            cursor: grabbing;
-        }
-        .folder-icon-img {
-            width: 48px;
-            height: 48px;
-            background: var(--bg-hover);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            overflow: hidden;
-        }
-        .folder-icon-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .folder-info {
-            flex: 1;
-        }
-        .folder-name {
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 4px;
-        }
-        .folder-count {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-        .folder-edit-icon {
-            background: none;
-            border: none;
-            font-size: 1.1rem;
-            padding: 8px;
-            border-radius: 30px;
-            color: var(--text-muted);
-            cursor: pointer;
-            display: none;
-        }
-        body.edit-mode .folder-edit-icon {
-            display: block;
-        }
-        .add-folder-row {
-            background: transparent;
-            border: 1.5px dashed var(--border-light);
-            justify-content: center;
-            gap: 8px;
-            color: var(--accent);
-        }
-        .add-folder-row .folder-left {
-            justify-content: center;
-        }
-
-        /* 详情页布局: 无分类图标，返回按钮区域整合 */
-        .detail-header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .back-button {
-            background: var(--bg-surface);
-            border: 0.5px solid var(--border-light);
-            border-radius: 40px;
-            padding: 8px 16px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            color: var(--accent);
-        }
-        /* 右上角纯图标编辑按钮（无文字） */
-        .detail-edit-icon {
-            background: var(--bg-surface);
-            border: 0.5px solid var(--border-light);
-            width: 44px;
-            height: 44px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            cursor: pointer;
-            color: var(--accent);
-        }
-        .add-bookmark-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 6px 18px;
-            border-radius: 30px;
-            font-weight: 500;
-            font-size: 0.8rem;
-            display: none;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        body.edit-mode .add-bookmark-btn {
-            display: flex;
-        }
-
-        /* 书签网格 */
-        .bookmarks-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-        .bookmark-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            border: 0.5px solid var(--border-light);
-            padding: 12px 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: relative;
-            cursor: pointer;
-            box-shadow: var(--shadow-sm);
-        }
-        .bookmark-card:active {
-            transform: scale(0.98);
-        }
-        .bookmark-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--bg-hover);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-        .bookmark-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .bookmark-info {
-            flex: 1;
-            min-width: 0;
-        }
-        .bookmark-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-        .bookmark-title a {
-            color: var(--text-primary);
-            text-decoration: none;
-        }
-        .bookmark-desc {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .bookmark-edit-icon {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background: var(--bg-surface);
-            border-radius: 20px;
-            width: 28px;
-            height: 28px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-            border: 0.5px solid var(--border-light);
-            z-index: 2;
-        }
-        body.edit-mode .bookmark-edit-icon {
-            display: flex;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            color: var(--text-muted);
-            background: var(--bg-surface);
-            border-radius: 28px;
-            grid-column: span 2;
-        }
-
-        /* 弹窗通用 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(6px);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        }
-        .modal-card {
-            background: var(--bg-surface);
-            border-radius: 28px;
-            width: 100%;
-            max-width: 400px;
-            padding: 24px 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            border: 0.5px solid var(--border-light);
-        }
-        .modal-card h3 {
-            font-size: 1.4rem;
-            margin-bottom: 18px;
-        }
-        .modal-card input, .modal-card textarea {
-            width: 100%;
-            padding: 12px 14px;
-            margin-bottom: 16px;
-            border-radius: 14px;
-            border: 0.5px solid var(--border-light);
-            background: var(--bg-page);
-            font-size: 0.95rem;
-        }
-        .icon-upload-area {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
-        }
-        .icon-preview {
-            width: 52px;
-            height: 52px;
-            background: var(--bg-hover);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-            overflow: hidden;
-        }
-        .upload-small-btn {
-            background: var(--bg-hover);
-            border: 0.5px solid var(--border-light);
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            cursor: pointer;
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 8px;
-        }
-        .modal-buttons button {
-            padding: 8px 18px;
-            border-radius: 40px;
-            border: none;
-            font-weight: 500;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
+        .app-container { max-width: 600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 8px 0; }
+        .logo-area h1 { font-size: 1.7rem; font-weight: 600; background: linear-gradient(135deg, var(--accent), #5e5ce0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .icon-btn { background: var(--bg-surface); border: none; width: 44px; height: 44px; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; cursor: pointer; box-shadow: var(--shadow-sm); color: var(--accent); border: 0.5px solid var(--border-light); transition: 0.1s; touch-action: manipulation; }
+        .icon-btn:active { transform: scale(0.94); background: var(--bg-hover); }
+        .folders-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+        .folder-row { background: var(--bg-folder-card); border-radius: 18px; border: 0.5px solid var(--border-light); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: var(--shadow-sm); transition: 0.1s; touch-action: pan-y; }
+        .folder-row.dragging { opacity: 0.3; background: var(--bg-hover); }
+        .folder-left { display: flex; align-items: center; gap: 16px; flex: 1; }
+        .drag-handle { display: none; font-size: 1.2rem; color: var(--text-muted); cursor: grab; margin-right: 6px; touch-action: none; padding: 6px; }
+        body.edit-mode .drag-handle { display: block; }
+        .folder-icon-img { width: 48px; height: 48px; background: var(--bg-hover); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; overflow: hidden; }
+        .folder-icon-img img { width: 100%; height: 100%; object-fit: cover; }
+        .folder-info { flex: 1; }
+        .folder-name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+        .folder-count { font-size: 0.7rem; color: var(--text-muted); }
+        .folder-edit-icon { background: none; border: none; font-size: 1.1rem; padding: 8px; border-radius: 30px; color: var(--text-muted); cursor: pointer; display: none; }
+        body.edit-mode .folder-edit-icon { display: block; }
+        .add-folder-row { background: transparent; border: 1.5px dashed var(--border-light); justify-content: center; }
+        .add-folder-row .folder-left { justify-content: center; }
+        .detail-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .back-button { background: var(--bg-surface); border: 0.5px solid var(--border-light); border-radius: 40px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--accent); }
+        .detail-edit-icon { background: var(--bg-surface); border: 0.5px solid var(--border-light); width: 44px; height: 44px; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; color: var(--accent); }
+        .add-bookmark-btn { background: var(--accent); color: white; border: none; padding: 6px 18px; border-radius: 30px; font-weight: 500; font-size: 0.8rem; display: none; align-items: center; gap: 6px; cursor: pointer; }
+        body.edit-mode .add-bookmark-btn { display: flex; }
+        .bookmarks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .bookmark-card { background: var(--bg-card); border-radius: 16px; border: 0.5px solid var(--border-light); padding: 12px 10px; display: flex; align-items: center; gap: 12px; position: relative; cursor: pointer; box-shadow: var(--shadow-sm); }
+        .bookmark-icon { width: 48px; height: 48px; background: var(--bg-hover); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; overflow: hidden; }
+        .bookmark-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .bookmark-info { flex: 1; min-width: 0; }
+        .bookmark-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .bookmark-title a { color: var(--text-primary); text-decoration: none; }
+        .bookmark-desc { font-size: 0.65rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .bookmark-edit-icon { position: absolute; top: 6px; right: 6px; background: var(--bg-surface); border-radius: 20px; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; border: 0.5px solid var(--border-light); z-index: 2; }
+        body.edit-mode .bookmark-edit-icon { display: flex; }
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); background: var(--bg-surface); border-radius: 28px; grid-column: span 2; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-card { background: var(--bg-surface); border-radius: 28px; width: 100%; max-width: 400px; padding: 24px 20px; border: 0.5px solid var(--border-light); max-height: 85vh; overflow-y: auto; }
+        .modal-card h3 { font-size: 1.4rem; margin-bottom: 18px; }
+        .modal-card input, .modal-card textarea { width: 100%; padding: 12px 14px; margin-bottom: 16px; border-radius: 14px; border: 0.5px solid var(--border-light); background: var(--bg-page); font-size: 0.95rem; }
+        .icon-upload-area { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+        .icon-preview { width: 52px; height: 52px; background: var(--bg-hover); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; }
+        .upload-small-btn { background: var(--bg-hover); border: 0.5px solid var(--border-light); padding: 6px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+        .modal-buttons button { padding: 8px 18px; border-radius: 40px; border: none; font-weight: 500; cursor: pointer; font-size: 0.85rem; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-secondary { background: var(--bg-hover); color: var(--text-primary); }
-        .footer-tip {
-            margin-top: 32px;
-            text-align: center;
-            font-size: 0.6rem;
-            color: var(--text-muted);
-            border-top: 0.5px solid var(--border-light);
-            padding-top: 18px;
-        }
+        .footer-tip { margin-top: 32px; text-align: center; font-size: 0.6rem; color: var(--text-muted); border-top: 0.5px solid var(--border-light); padding-top: 18px; }
+        /* 设置面板独立样式 */
+        .settings-section { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--border-light); }
+        .settings-btn-text { background: var(--bg-hover); border: none; padding: 10px; border-radius: 16px; width: 100%; text-align: center; font-size: 0.9rem; color: var(--accent); margin-top: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 <div class="app-container" id="appRoot"></div>
 
-<!-- 分类编辑弹窗 -->
-<div id="folderModal" class="modal">
+<!-- 全局设置弹窗（齿轮） -->
+<div id="settingsModal" class="modal">
     <div class="modal-card">
-        <h3>编辑文件夹</h3>
-        <input type="text" id="folderNameInput" placeholder="文件夹名称">
-        <div class="icon-upload-area">
-            <div class="icon-preview" id="folderIconPreview">📁</div>
-            <input type="file" id="folderIconFile" accept="image/*" style="display: none;">
-            <button type="button" class="upload-small-btn" id="uploadFolderIconBtn">上传图标</button>
-            <button type="button" class="upload-small-btn" id="clearFolderIconBtn">清除</button>
+        <h3>⚙️ 设置与备份</h3>
+        <div style="margin-bottom: 20px;">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">所有书签数据保存在当前浏览器中，换设备或清缓存前请手动导出备份。</p>
+            <button class="upload-small-btn" id="exportDataBtn" style="width: 100%; margin-bottom: 10px;">📤 导出备份 (JSON)</button>
+            <button class="upload-small-btn" id="importDataBtn" style="width: 100%; margin-bottom: 10px;">📥 导入备份 (JSON)</button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            <button class="upload-small-btn" id="resetDataBtn" style="width: 100%; background: #ffe6e6; color: var(--danger);">⚠️ 重置所有数据</button>
         </div>
         <div class="modal-buttons">
-            <button class="btn-danger" id="deleteFolderBtn">删除文件夹</button>
-            <button class="btn-secondary" id="cancelFolderModal">取消</button>
-            <button class="btn-primary" id="saveFolderModal">保存</button>
+            <button class="btn-secondary" id="closeSettingsBtn">关闭</button>
         </div>
     </div>
 </div>
 
-<!-- 书签编辑弹窗 -->
+<!-- 文件夹弹窗 -->
+<div id="folderModal" class="modal">
+    <div class="modal-card"><h3>编辑文件夹</h3><input type="text" id="folderNameInput"><div class="icon-upload-area"><div class="icon-preview" id="folderIconPreview">📁</div><input type="file" id="folderIconFile" accept="image/*" style="display:none"><button type="button" class="upload-small-btn" id="uploadFolderIconBtn">上传图标</button><button type="button" class="upload-small-btn" id="clearFolderIconBtn">清除</button></div><div class="modal-buttons"><button class="btn-danger" id="deleteFolderBtn">删除文件夹</button><button class="btn-secondary" id="cancelFolderModal">取消</button><button class="btn-primary" id="saveFolderModal">保存</button></div></div>
+</div>
+<!-- 书签弹窗 -->
 <div id="bookmarkModal" class="modal">
-    <div class="modal-card">
-        <h3 id="bookmarkModalTitle">添加书签</h3>
-        <input type="text" id="bookmarkTitle" placeholder="标题 *">
-        <input type="text" id="bookmarkUrl" placeholder="网址 https://...">
-        <textarea id="bookmarkDesc" rows="2" placeholder="描述 (可选)"></textarea>
-        <div class="icon-upload-area">
-            <div class="icon-preview" id="bookmarkIconPreview">🔖</div>
-            <input type="file" id="bookmarkIconFile" accept="image/*" style="display: none;">
-            <button type="button" class="upload-small-btn" id="uploadBookmarkIconBtn">上传图标</button>
-            <button type="button" class="upload-small-btn" id="clearBookmarkIconBtn">清除</button>
-        </div>
-        <div class="modal-buttons">
-            <button class="btn-danger" id="deleteBookmarkBtn">删除</button>
-            <button class="btn-secondary" id="cancelBookmarkModal">取消</button>
-            <button class="btn-primary" id="saveBookmarkBtn">保存</button>
-        </div>
-    </div>
+    <div class="modal-card"><h3 id="bookmarkModalTitle">添加书签</h3><input type="text" id="bookmarkTitle" placeholder="标题 *"><input type="text" id="bookmarkUrl" placeholder="网址"><textarea id="bookmarkDesc" rows="2" placeholder="描述"></textarea><div class="icon-upload-area"><div class="icon-preview" id="bookmarkIconPreview">🔖</div><input type="file" id="bookmarkIconFile" accept="image/*" style="display:none"><button type="button" class="upload-small-btn" id="uploadBookmarkIconBtn">上传图标</button><button type="button" class="upload-small-btn" id="clearBookmarkIconBtn">清除</button></div><div class="modal-buttons"><button class="btn-danger" id="deleteBookmarkBtn">删除</button><button class="btn-secondary" id="cancelBookmarkModal">取消</button><button class="btn-primary" id="saveBookmarkBtn">保存</button></div></div>
 </div>
 
 <script>
-    // ---------- 数据 ----------
-    let categories = [];      // { id, name, customIcon }
-    let bookmarks = [];       // { id, categoryId, title, url, description, customIcon }
+    let categories = [];
+    let bookmarks = [];
     let currentCategoryId = null;
     let editMode = false;
-    let viewState = 'folders';   // 'folders' or 'detail'
-
-    // 拖拽相关
+    let viewState = 'folders';
     let dragSrcIndex = null;
-    let dragOverIndex = null;
 
     function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
 
-    // 工具函数
     function getGoogleFavicon(url) {
         if (!url || url === '#') return null;
         try {
@@ -489,12 +137,14 @@
             return `https://t3.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=64&url=https://${hostname}`;
         } catch(e) { return null; }
     }
+
     function getFirstLetter(str) {
         if (!str) return '📄';
         let first = str.trim().charAt(0);
         if (/[\u4e00-\u9fa5a-zA-Z0-9]/.test(first)) return first.toUpperCase();
         return '🔖';
     }
+
     function loadBookmarkIcon(cardElement, bookmark) {
         const iconDiv = cardElement.querySelector('.bookmark-icon');
         if (!iconDiv) return;
@@ -527,12 +177,13 @@
     }
 
     function saveData() {
-        localStorage.setItem('folder_categories_sortable', JSON.stringify(categories));
-        localStorage.setItem('folder_bookmarks_sortable', JSON.stringify(bookmarks));
+        localStorage.setItem('folder_categories_final', JSON.stringify(categories));
+        localStorage.setItem('folder_bookmarks_final', JSON.stringify(bookmarks));
     }
+
     function loadData() {
-        const storedCats = localStorage.getItem('folder_categories_sortable');
-        const storedBookmarks = localStorage.getItem('folder_bookmarks_sortable');
+        const storedCats = localStorage.getItem('folder_categories_final');
+        const storedBookmarks = localStorage.getItem('folder_bookmarks_final');
         if (storedCats) categories = JSON.parse(storedCats);
         else categories = [
             { id: genId(), name: "常用网站" },
@@ -556,86 +207,84 @@
     function getBookmarkCount(catId) { return bookmarks.filter(b => b.categoryId === catId).length; }
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
-    // ---------- 拖动排序逻辑 ----------
-    function attachDragEvents() {
-        const rows = document.querySelectorAll('.folder-row:not(.add-folder-row)');
-        rows.forEach((row, idx) => {
-            row.setAttribute('data-index', idx);
-            // 触摸/鼠标拖动：仅在编辑模式下且点击 drag-handle 时启动
-            const handle = row.querySelector('.drag-handle');
-            if (!handle) return;
-            handle.addEventListener('touchstart', (e) => { if (editMode) dragStart(e, idx); });
-            handle.addEventListener('mousedown', (e) => { if (editMode) dragStart(e, idx); });
-            // 为了让 drop 有效，需要阻止 dragover 默认行为，我们自定义
-            row.addEventListener('dragover', (e) => { if (editMode) e.preventDefault(); });
-            row.addEventListener('dragstart', (e) => { if (editMode) dragStartEvent(e, idx); });
-            row.addEventListener('dragend', (e) => { if (editMode) dragEndEvent(e); });
-            row.addEventListener('dragenter', (e) => { if (editMode) dragEnterEvent(e, idx); });
-        });
-    }
-
-    function dragStart(e, idx) {
-        if (!editMode) return;
-        dragSrcIndex = idx;
-        e.dataTransfer?.setData('text/plain', idx);
-        e.target?.setAttribute('draggable', 'true');
-    }
-    function dragStartEvent(e, idx) {
-        if (!editMode) { e.preventDefault(); return false; }
-        dragSrcIndex = idx;
-        e.dataTransfer.setData('text/plain', idx);
-        e.dataTransfer.effectAllowed = 'move';
-    }
-    function dragEnterEvent(e, idx) {
-        if (!editMode || dragSrcIndex === null) return;
-        e.preventDefault();
-        if (dragSrcIndex !== idx) {
-            dragOverIndex = idx;
-            reorderCategories(dragSrcIndex, dragOverIndex);
-            dragSrcIndex = dragOverIndex;
-            dragOverIndex = null;
-        }
-    }
-    function dragEndEvent(e) {
-        dragSrcIndex = null;
-        dragOverIndex = null;
-        renderFoldersView(); // 刷新确保顺序
-    }
-    // 实际重排
     function reorderCategories(from, to) {
         if (from === to) return;
         const moved = categories[from];
         categories.splice(from, 1);
         categories.splice(to, 0, moved);
         saveData();
-        renderFoldersView(); // 立即刷新并重新绑定事件
+        renderFoldersView();
     }
 
-    // 渲染文件夹主视图 (可拖动)
+    // 设置拖拽 (兼容触摸)
+    function attachDragEventsForRow(row, idx) {
+        let dragStartY = 0, isDragging = false;
+        const handle = row.querySelector('.drag-handle');
+        if (!handle) return;
+        const touchStartHandler = (e) => {
+            if (!editMode) return;
+            e.preventDefault();
+            dragStartY = e.touches[0].clientY;
+            isDragging = true;
+            dragSrcIndex = idx;
+            row.classList.add('dragging');
+        };
+        const touchMoveHandler = (e) => {
+            if (!isDragging || dragSrcIndex === null) return;
+            e.preventDefault();
+            const currentY = e.touches[0].clientY;
+            const delta = currentY - dragStartY;
+            const rows = document.querySelectorAll('.folder-row:not(.add-folder-row)');
+            let targetIndex = dragSrcIndex;
+            if (delta > 20 && dragSrcIndex < rows.length - 1) targetIndex = dragSrcIndex + 1;
+            if (delta < -20 && dragSrcIndex > 0) targetIndex = dragSrcIndex - 1;
+            if (targetIndex !== dragSrcIndex) {
+                reorderCategories(dragSrcIndex, targetIndex);
+                dragSrcIndex = targetIndex;
+                dragStartY = currentY;
+            }
+        };
+        const touchEndHandler = () => {
+            isDragging = false;
+            row.classList.remove('dragging');
+            dragSrcIndex = null;
+        };
+        handle.addEventListener('touchstart', touchStartHandler, { passive: false });
+        handle.addEventListener('touchmove', touchMoveHandler, { passive: false });
+        handle.addEventListener('touchend', touchEndHandler);
+        // 鼠标拖拽 (桌面备用)
+        let mouseDown = false;
+        handle.addEventListener('mousedown', (e) => { if (editMode) { mouseDown = true; dragSrcIndex = idx; e.preventDefault(); } });
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseDown || dragSrcIndex === null) return;
+            const rows = document.querySelectorAll('.folder-row:not(.add-folder-row)');
+            let targetIdx = dragSrcIndex;
+            const rects = rows.forEach((r, i) => { const rect = r.getBoundingClientRect(); if (e.clientY > rect.top && e.clientY < rect.bottom) targetIdx = i; });
+            if (targetIdx !== dragSrcIndex) { reorderCategories(dragSrcIndex, targetIdx); dragSrcIndex = targetIdx; }
+        });
+        window.addEventListener('mouseup', () => { mouseDown = false; dragSrcIndex = null; });
+    }
+
     function renderFoldersView() {
         const container = document.getElementById('appRoot');
-        let html = `
+        container.innerHTML = `
             <div class="header">
                 <div class="logo-area"><h1>📁 口袋书签</h1></div>
                 <div class="header-actions">
-                    <button class="icon-btn" id="modeToggleBtn" title="编辑模式">${editMode ? '✅' : '✏️'}</button>
+                    <button class="icon-btn" id="modeToggleBtn">${editMode ? '✅' : '✏️'}</button>
+                    <button class="icon-btn" id="settingsGearBtn">⚙️</button>
                 </div>
             </div>
             <div class="folders-list" id="foldersList"></div>
-            <div class="footer-tip">编辑模式下可拖动文件夹排序，点击文件夹进入详情</div>
+            <div class="footer-tip">✏️ 编辑模式可拖动排序、修改文件夹 | ⚙️ 备份/还原数据</div>
         `;
-        container.innerHTML = html;
         const foldersList = document.getElementById('foldersList');
         foldersList.innerHTML = '';
         categories.forEach((cat, idx) => {
             const count = getBookmarkCount(cat.id);
-            const iconHtml = cat.customIcon && cat.customIcon.startsWith('data:image') 
-                ? `<img src="${cat.customIcon}" style="width:100%;height:100%;object-fit:cover">` 
-                : `<span style="font-size:28px;">📂</span>`;
+            const iconHtml = cat.customIcon && cat.customIcon.startsWith('data:image') ? `<img src="${cat.customIcon}" style="width:100%;height:100%;object-fit:cover">` : `<span style="font-size:28px;">📂</span>`;
             const row = document.createElement('div');
             row.className = 'folder-row';
-            row.setAttribute('draggable', editMode ? 'true' : 'false');
-            row.setAttribute('data-idx', idx);
             row.innerHTML = `
                 <div style="display:flex; align-items:center; width:100%;">
                     <div class="drag-handle" style="touch-action: none;">⋮⋮</div>
@@ -646,127 +295,137 @@
                             <div class="folder-count">${count} 个书签</div>
                         </div>
                     </div>
-                    <button class="folder-edit-icon" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-icon="${cat.customIcon || ''}">✏️</button>
+                    <button class="folder-edit-icon" data-id="${cat.id}">✏️</button>
                 </div>
             `;
-            // 点击进入详情
             row.addEventListener('click', (e) => {
                 if (e.target.classList.contains('folder-edit-icon') || e.target.classList.contains('drag-handle')) return;
                 currentCategoryId = cat.id;
                 viewState = 'detail';
                 renderDetailView();
             });
-            const editBtn = row.querySelector('.folder-edit-icon');
-            editBtn.addEventListener('click', (e) => {
+            row.querySelector('.folder-edit-icon').addEventListener('click', (e) => {
                 e.stopPropagation();
                 openFolderEditModal(cat.id, cat.name, cat.customIcon);
             });
-            // 拖拽事件
-            if (editMode) {
-                row.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', idx);
-                    e.dataTransfer.effectAllowed = 'move';
-                    dragSrcIndex = idx;
-                });
-                row.addEventListener('dragover', (e) => { e.preventDefault(); });
-                row.addEventListener('dragenter', (e) => { e.preventDefault(); if (dragSrcIndex !== null && dragSrcIndex !== idx) reorderCategories(dragSrcIndex, idx); dragSrcIndex = idx; });
-                row.addEventListener('dragend', () => { dragSrcIndex = null; renderFoldersView(); });
-            }
             foldersList.appendChild(row);
+            attachDragEventsForRow(row, idx);
         });
-        // 添加分类行
         const addRow = document.createElement('div');
         addRow.className = 'folder-row add-folder-row';
         addRow.innerHTML = `<div class="folder-left" style="justify-content:center; gap:8px;"><span style="font-size:22px;">➕</span><span>新建文件夹</span></div>`;
         addRow.addEventListener('click', () => addNewCategory());
         foldersList.appendChild(addRow);
-        document.getElementById('modeToggleBtn').addEventListener('click', () => { editMode = !editMode; saveEditMode(); renderFoldersView(); });
+        document.getElementById('modeToggleBtn').addEventListener('click', () => { editMode = !editMode; localStorage.setItem('folder_edit_mode_final', editMode); applyEditModeClass(); renderFoldersView(); });
+        document.getElementById('settingsGearBtn').addEventListener('click', () => openSettingsModal());
+        applyEditModeClass();
     }
 
-    // 详情视图：无分类图标，返回按钮处显示文件夹名
     function renderDetailView() {
         const currentCat = categories.find(c => c.id === currentCategoryId);
         if (!currentCat) { viewState = 'folders'; renderFoldersView(); return; }
         const filtered = bookmarks.filter(b => b.categoryId === currentCategoryId);
-        let bookmarksHtml = '';
-        if (filtered.length === 0) bookmarksHtml = `<div class="empty-state">✨ 暂无书签，点击「编辑模式」后添加</div>`;
-        else bookmarksHtml = `<div class="bookmarks-grid" id="bookmarksGrid"></div>`;
+        let bookmarksHtml = filtered.length === 0 ? `<div class="empty-state">✨ 暂无书签，点击「编辑模式」后添加</div>` : `<div class="bookmarks-grid" id="bookmarksGrid"></div>`;
         const container = document.getElementById('appRoot');
         container.innerHTML = `
             <div class="detail-header-bar">
                 <div class="back-button" id="backToFoldersBtn">← ${escapeHtml(currentCat.name)}</div>
                 <div class="detail-edit-icon" id="detailModeToggleBtn">${editMode ? '✅' : '✏️'}</div>
             </div>
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-                <button class="add-bookmark-btn" id="detailAddBookmarkBtn">➕ 新书签</button>
-            </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;"><button class="add-bookmark-btn" id="detailAddBookmarkBtn">➕ 新书签</button></div>
             <div id="detailBookmarksContainer">${bookmarksHtml}</div>
+            <div style="margin-top: 20px; text-align: center;"><button class="icon-btn" id="detailSettingsBtn" style="width: auto; padding: 0 20px;">⚙️ 备份设置</button></div>
         `;
         if (filtered.length > 0) {
             const grid = document.getElementById('bookmarksGrid');
-            grid.innerHTML = '';
             filtered.forEach(book => {
                 const card = document.createElement('div');
                 card.className = 'bookmark-card';
-                card.innerHTML = `
-                    <div class="bookmark-icon"></div>
-                    <div class="bookmark-info">
-                        <div class="bookmark-title"><a href="${escapeHtml(book.url)}" target="_blank">${escapeHtml(book.title)}</a></div>
-                        <div class="bookmark-desc">${book.description ? escapeHtml(book.description) : '暂无描述'}</div>
-                    </div>
-                    <div class="bookmark-edit-icon" data-id="${book.id}">✏️</div>
-                `;
+                card.innerHTML = `<div class="bookmark-icon"></div><div class="bookmark-info"><div class="bookmark-title"><a href="${escapeHtml(book.url)}" target="_blank">${escapeHtml(book.title)}</a></div><div class="bookmark-desc">${book.description || '暂无描述'}</div></div><div class="bookmark-edit-icon" data-id="${book.id}">✏️</div>`;
                 grid.appendChild(card);
                 loadBookmarkIcon(card, book);
-                const editIcon = card.querySelector('.bookmark-edit-icon');
-                editIcon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openBookmarkModal(book.id);
-                });
-                card.addEventListener('click', (e) => {
-                    if (e.target === editIcon || editIcon.contains(e.target)) return;
-                    if (book.url && book.url !== '#') window.open(book.url, '_blank');
-                });
+                card.querySelector('.bookmark-edit-icon').addEventListener('click', (e) => { e.stopPropagation(); openBookmarkModal(book.id); });
+                card.addEventListener('click', (e) => { if (!e.target.closest('.bookmark-edit-icon') && book.url !== '#') window.open(book.url, '_blank'); });
             });
         }
         document.getElementById('backToFoldersBtn').addEventListener('click', () => { viewState = 'folders'; renderFoldersView(); });
-        document.getElementById('detailModeToggleBtn').addEventListener('click', () => { editMode = !editMode; saveEditMode(); renderDetailView(); });
-        const addBtn = document.getElementById('detailAddBookmarkBtn');
-        if (addBtn) addBtn.addEventListener('click', () => openBookmarkModal(null));
-        applyDetailEditModeStyle();
+        document.getElementById('detailModeToggleBtn').addEventListener('click', () => { editMode = !editMode; localStorage.setItem('folder_edit_mode_final', editMode); applyEditModeClass(); renderDetailView(); });
+        document.getElementById('detailAddBookmarkBtn')?.addEventListener('click', () => openBookmarkModal(null));
+        document.getElementById('detailSettingsBtn')?.addEventListener('click', () => openSettingsModal());
+        applyEditModeClass();
     }
 
-    function applyDetailEditModeStyle() {
+    function applyEditModeClass() {
         if (editMode) document.body.classList.add('edit-mode');
         else document.body.classList.remove('edit-mode');
     }
-    function saveEditMode() { localStorage.setItem('folder_edit_mode_sort', editMode); applyDetailEditModeStyle(); }
 
-    // 文件夹弹窗 (上传图标)
-    let editingFolderId = null;
-    let tempFolderIcon = null;
-    const folderModal = document.getElementById('folderModal');
-    const folderNameInput = document.getElementById('folderNameInput');
-    const folderIconPreview = document.getElementById('folderIconPreview');
-    const folderIconFile = document.getElementById('folderIconFile');
+    // 设置弹窗：备份导入导出
+    function openSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+    function closeSettingsModal() { document.getElementById('settingsModal').style.display = 'none'; }
+    function exportBackup() {
+        const exportData = { categories, bookmarks, version: '1.0', exportTime: new Date().toISOString() };
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bookmark_backup_${new Date().toISOString().slice(0,19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    function importBackup(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (imported.categories && imported.bookmarks) {
+                    categories = imported.categories;
+                    bookmarks = imported.bookmarks;
+                    if (!categories.length) categories = [{ id: genId(), name: "我的书签" }];
+                    if (!currentCategoryId || !categories.find(c => c.id === currentCategoryId)) currentCategoryId = categories[0].id;
+                    saveData();
+                    alert("导入成功！页面将刷新。");
+                    if (viewState === 'folders') renderFoldersView();
+                    else renderDetailView();
+                    closeSettingsModal();
+                } else { alert("文件格式不正确，缺少书签数据。"); }
+            } catch(err) { alert("解析失败，请选择正确的备份文件"); }
+        };
+        reader.readAsText(file);
+    }
+    function resetAllData() {
+        if (confirm("⚠️ 此操作会删除所有分类和书签，恢复默认数据。不可撤销！确定吗？")) {
+            localStorage.removeItem('folder_categories_final');
+            localStorage.removeItem('folder_bookmarks_final');
+            loadData();
+            currentCategoryId = categories[0]?.id;
+            if (viewState === 'folders') renderFoldersView();
+            else renderDetailView();
+            closeSettingsModal();
+        }
+    }
+
+    // 文件夹弹窗
+    let editingFolderId = null, tempFolderIcon = null;
     function openFolderEditModal(id, name, currentIcon) {
         editingFolderId = id;
-        folderNameInput.value = name;
+        document.getElementById('folderNameInput').value = name;
         tempFolderIcon = currentIcon || null;
+        const preview = document.getElementById('folderIconPreview');
         if (tempFolderIcon && tempFolderIcon.startsWith('data:image')) {
-            folderIconPreview.innerHTML = '';
+            preview.innerHTML = '';
             const img = document.createElement('img');
             img.src = tempFolderIcon;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            folderIconPreview.appendChild(img);
-        } else { folderIconPreview.innerHTML = '📁'; folderIconPreview.style.fontSize = '32px'; }
-        folderModal.style.display = 'flex';
+            img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
+            preview.appendChild(img);
+        } else { preview.innerHTML = '📁'; preview.style.fontSize = '32px'; }
+        document.getElementById('folderModal').style.display = 'flex';
     }
-    function closeFolderModal() { folderModal.style.display = 'none'; editingFolderId = null; tempFolderIcon = null; }
     function saveFolderEdit() {
-        const newName = folderNameInput.value.trim();
+        const newName = document.getElementById('folderNameInput').value.trim();
         if (!newName) return alert("名称不能为空");
         const cat = categories.find(c => c.id === editingFolderId);
         if (cat) { cat.name = newName; if (tempFolderIcon) cat.customIcon = tempFolderIcon; else delete cat.customIcon; }
@@ -776,7 +435,7 @@
     }
     function deleteFolder() {
         if (categories.length === 1) return alert("至少保留一个分类");
-        if (confirm(`删除文件夹及其中的所有书签？`)) {
+        if (confirm("删除文件夹及其中的所有书签？")) {
             bookmarks = bookmarks.filter(b => b.categoryId !== editingFolderId);
             categories = categories.filter(c => c.id !== editingFolderId);
             if (currentCategoryId === editingFolderId) currentCategoryId = categories[0]?.id;
@@ -785,101 +444,118 @@
             closeFolderModal();
         }
     }
-    function handleFolderIconUpload() {
-        const file = folderIconFile.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            tempFolderIcon = e.target.result;
-            folderIconPreview.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = tempFolderIcon;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            folderIconPreview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    }
-    function clearFolderIcon() { tempFolderIcon = null; folderIconPreview.innerHTML = '📁'; folderIconPreview.style.fontSize = '32px'; }
+    function closeFolderModal() { document.getElementById('folderModal').style.display = 'none'; editingFolderId = null; tempFolderIcon = null; }
 
     // 书签弹窗
-    let editingBookId = null;
-    let tempBookIcon = null;
-    const bookmarkModal = document.getElementById('bookmarkModal');
-    const bookmarkTitleInput = document.getElementById('bookmarkTitle');
-    const bookmarkUrlInput = document.getElementById('bookmarkUrl');
-    const bookmarkDescInput = document.getElementById('bookmarkDesc');
-    const bookmarkIconPreview = document.getElementById('bookmarkIconPreview');
-    const bookmarkIconFile = document.getElementById('bookmarkIconFile');
+    let editingBookId = null, tempBookIcon = null;
     function openBookmarkModal(bookId = null) {
         editingBookId = bookId;
         tempBookIcon = null;
         if (bookId === null) {
             document.getElementById('bookmarkModalTitle').innerText = '添加书签';
-            bookmarkTitleInput.value = ''; bookmarkUrlInput.value = ''; bookmarkDescInput.value = '';
-            bookmarkIconPreview.innerHTML = '🔖'; bookmarkIconPreview.style.fontSize = '28px';
-            document.getElementById('deleteBookmarkBtn').style.opacity = '0.5'; document.getElementById('deleteBookmarkBtn').style.pointerEvents = 'none';
+            document.getElementById('bookmarkTitle').value = '';
+            document.getElementById('bookmarkUrl').value = '';
+            document.getElementById('bookmarkDesc').value = '';
+            document.getElementById('bookmarkIconPreview').innerHTML = '🔖';
+            document.getElementById('deleteBookmarkBtn').style.opacity = '0.5';
+            document.getElementById('deleteBookmarkBtn').style.pointerEvents = 'none';
         } else {
             const book = bookmarks.find(b => b.id === bookId);
             if (book) {
                 document.getElementById('bookmarkModalTitle').innerText = '编辑书签';
-                bookmarkTitleInput.value = book.title; bookmarkUrlInput.value = book.url; bookmarkDescInput.value = book.description || '';
+                document.getElementById('bookmarkTitle').value = book.title;
+                document.getElementById('bookmarkUrl').value = book.url;
+                document.getElementById('bookmarkDesc').value = book.description || '';
+                const preview = document.getElementById('bookmarkIconPreview');
                 if (book.customIcon && book.customIcon.startsWith('data:image')) {
-                    bookmarkIconPreview.innerHTML = '';
+                    preview.innerHTML = '';
                     const img = document.createElement('img');
                     img.src = book.customIcon;
                     img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
-                    bookmarkIconPreview.appendChild(img);
+                    preview.appendChild(img);
                     tempBookIcon = book.customIcon;
-                } else { bookmarkIconPreview.innerHTML = getFirstLetter(book.title); bookmarkIconPreview.style.fontSize = '28px'; }
+                } else { preview.innerHTML = getFirstLetter(book.title); preview.style.fontSize = '28px'; }
             }
-            document.getElementById('deleteBookmarkBtn').style.opacity = '1'; document.getElementById('deleteBookmarkBtn').style.pointerEvents = 'auto';
+            document.getElementById('deleteBookmarkBtn').style.opacity = '1';
+            document.getElementById('deleteBookmarkBtn').style.pointerEvents = 'auto';
         }
-        bookmarkModal.style.display = 'flex';
+        document.getElementById('bookmarkModal').style.display = 'flex';
     }
-    function closeBookmarkModal() { bookmarkModal.style.display = 'none'; editingBookId = null; tempBookIcon = null; }
     function saveBookmark() {
-        const title = bookmarkTitleInput.value.trim(); const url = bookmarkUrlInput.value.trim(); const desc = bookmarkDescInput.value.trim();
+        const title = document.getElementById('bookmarkTitle').value.trim();
+        const url = document.getElementById('bookmarkUrl').value.trim();
+        const desc = document.getElementById('bookmarkDesc').value.trim();
         if (!title || !url) { alert("标题和网址不能为空"); return; }
-        const newData = { title, url, description: desc }; if (tempBookIcon) newData.customIcon = tempBookIcon; else newData.customIcon = null;
+        const newData = { title, url, description: desc };
+        if (tempBookIcon) newData.customIcon = tempBookIcon;
         if (editingBookId === null) bookmarks.push({ id: genId(), categoryId: currentCategoryId, ...newData });
         else { const idx = bookmarks.findIndex(b => b.id === editingBookId); if (idx !== -1) bookmarks[idx] = { ...bookmarks[idx], ...newData }; }
-        saveData(); if (viewState === 'detail') renderDetailView(); closeBookmarkModal();
+        saveData();
+        if (viewState === 'detail') renderDetailView();
+        closeBookmarkModal();
     }
     function deleteBookmark() {
         if (editingBookId === null) return;
-        if (confirm("永久删除该书签？")) { bookmarks = bookmarks.filter(b => b.id !== editingBookId); saveData(); if (viewState === 'detail') renderDetailView(); closeBookmarkModal(); }
+        if (confirm("永久删除该书签？")) {
+            bookmarks = bookmarks.filter(b => b.id !== editingBookId);
+            saveData();
+            if (viewState === 'detail') renderDetailView();
+            closeBookmarkModal();
+        }
     }
-    function handleBookmarkIconUpload() {
-        const file = bookmarkIconFile.files[0]; if (!file) return;
-        const reader = new FileReader(); reader.onload = (e) => { tempBookIcon = e.target.result; bookmarkIconPreview.innerHTML = ''; const img = document.createElement('img'); img.src = tempBookIcon; img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; bookmarkIconPreview.appendChild(img); }; reader.readAsDataURL(file);
-    }
-    function clearBookmarkIcon() { tempBookIcon = null; const titleVal = bookmarkTitleInput.value.trim(); bookmarkIconPreview.innerHTML = getFirstLetter(titleVal || '🔖'); bookmarkIconPreview.style.fontSize = '28px'; }
-    function addNewCategory() { let newName = prompt("输入文件夹名称", "新文件夹"); if (newName && newName.trim()) { categories.push({ id: genId(), name: newName.trim() }); saveData(); if (viewState === 'folders') renderFoldersView(); } }
+    function closeBookmarkModal() { document.getElementById('bookmarkModal').style.display = 'none'; editingBookId = null; tempBookIcon = null; }
 
-    function bindModals() {
-        document.getElementById('uploadFolderIconBtn').addEventListener('click', () => folderIconFile.click());
-        document.getElementById('clearFolderIconBtn').addEventListener('click', clearFolderIcon);
-        folderIconFile.addEventListener('change', handleFolderIconUpload);
-        document.getElementById('saveFolderModal').addEventListener('click', saveFolderEdit);
-        document.getElementById('cancelFolderModal').addEventListener('click', closeFolderModal);
-        document.getElementById('deleteFolderBtn').addEventListener('click', deleteFolder);
-        document.getElementById('uploadBookmarkIconBtn').addEventListener('click', () => bookmarkIconFile.click());
-        document.getElementById('clearBookmarkIconBtn').addEventListener('click', clearBookmarkIcon);
-        bookmarkIconFile.addEventListener('change', handleBookmarkIconUpload);
-        document.getElementById('saveBookmarkBtn').addEventListener('click', saveBookmark);
-        document.getElementById('cancelBookmarkModal').addEventListener('click', closeBookmarkModal);
-        document.getElementById('deleteBookmarkBtn').addEventListener('click', deleteBookmark);
-        folderModal.addEventListener('click', (e) => { if (e.target === folderModal) closeFolderModal(); });
-        bookmarkModal.addEventListener('click', (e) => { if (e.target === bookmarkModal) closeBookmarkModal(); });
+    function addNewCategory() {
+        let newName = prompt("输入文件夹名称", "新文件夹");
+        if (newName && newName.trim()) {
+            categories.push({ id: genId(), name: newName.trim() });
+            saveData();
+            if (viewState === 'folders') renderFoldersView();
+        }
+    }
+
+    function initModals() {
+        // 设置弹窗
+        document.getElementById('exportDataBtn')?.addEventListener('click', exportBackup);
+        document.getElementById('importDataBtn')?.addEventListener('click', () => document.getElementById('importFileInput').click());
+        document.getElementById('importFileInput')?.addEventListener('change', (e) => { if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; });
+        document.getElementById('resetDataBtn')?.addEventListener('click', resetAllData);
+        document.getElementById('closeSettingsBtn')?.addEventListener('click', closeSettingsModal);
+        // 文件夹弹窗
+        document.getElementById('uploadFolderIconBtn')?.addEventListener('click', () => document.getElementById('folderIconFile').click());
+        document.getElementById('clearFolderIconBtn')?.addEventListener('click', () => { tempFolderIcon = null; document.getElementById('folderIconPreview').innerHTML = '📁'; });
+        document.getElementById('folderIconFile')?.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => { tempFolderIcon = ev.target.result; const preview = document.getElementById('folderIconPreview'); preview.innerHTML = ''; const img = document.createElement('img'); img.src = tempFolderIcon; img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; preview.appendChild(img); };
+            reader.readAsDataURL(file);
+        });
+        document.getElementById('saveFolderModal')?.addEventListener('click', saveFolderEdit);
+        document.getElementById('cancelFolderModal')?.addEventListener('click', closeFolderModal);
+        document.getElementById('deleteFolderBtn')?.addEventListener('click', deleteFolder);
+        // 书签弹窗
+        document.getElementById('uploadBookmarkIconBtn')?.addEventListener('click', () => document.getElementById('bookmarkIconFile').click());
+        document.getElementById('clearBookmarkIconBtn')?.addEventListener('click', () => { tempBookIcon = null; const preview = document.getElementById('bookmarkIconPreview'); preview.innerHTML = getFirstLetter(document.getElementById('bookmarkTitle').value.trim() || '🔖'); preview.style.fontSize = '28px'; });
+        document.getElementById('bookmarkIconFile')?.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => { tempBookIcon = ev.target.result; const preview = document.getElementById('bookmarkIconPreview'); preview.innerHTML = ''; const img = document.createElement('img'); img.src = tempBookIcon; img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; preview.appendChild(img); };
+            reader.readAsDataURL(file);
+        });
+        document.getElementById('saveBookmarkBtn')?.addEventListener('click', saveBookmark);
+        document.getElementById('cancelBookmarkModal')?.addEventListener('click', closeBookmarkModal);
+        document.getElementById('deleteBookmarkBtn')?.addEventListener('click', deleteBookmark);
+        // 点击背景关闭
+        document.getElementById('settingsModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('settingsModal')) closeSettingsModal(); });
+        document.getElementById('folderModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('folderModal')) closeFolderModal(); });
+        document.getElementById('bookmarkModal')?.addEventListener('click', (e) => { if (e.target === document.getElementById('bookmarkModal')) closeBookmarkModal(); });
     }
 
     function init() {
         loadData();
-        editMode = localStorage.getItem('folder_edit_mode_sort') === 'true';
-        applyDetailEditModeStyle();
-        bindModals();
+        editMode = localStorage.getItem('folder_edit_mode_final') === 'true';
+        applyEditModeClass();
+        initModals();
         viewState = 'folders';
         renderFoldersView();
     }
