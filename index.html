@@ -153,32 +153,18 @@ tailwind.config = {
 <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(event)">
 
 <script>
-// 所有文件夹内置测试书签，增加首页书签数组
+// 清空全部测试书签
 let data = {
   "home":[],
-  "软件": [
-    {name:"GitHub",url:"https://github.com"}
-  ],
+  "软件": [],
   "娱乐": {
-    "阅读":[
-      {name:"微信读书",url:"https://weread.qq.com"}
-    ],
-    "音乐":[
-      {name:"网易云音乐",url:"https://music.163.com"}
-    ],
-    "影视":[
-      {name:"哔哩哔哩",url:"https://bilibili.com"}
-    ]
+    "阅读":[],
+    "音乐":[],
+    "影视":[]
   },
-  "工具": [
-    {name:"站长工具",url:"https://tool.chinaz.com"}
-  ],
-  "资源": [
-    {name:"阿里云盘",url:"https://www.aliyundrive.com"}
-  ],
-  "其它": [
-    {name:"百度",url:"https://www.baidu.com"}
-  ]
+  "工具": [],
+  "资源": [],
+  "其它": []
 };
 let currentPath = [];
 let sortType = "default";
@@ -206,7 +192,7 @@ function renderHomeBookmarks(){
   if(sortType === 'nameDesc') list = [...list].sort((a,b)=>b.name.localeCompare(a.name,'zh-CN'));
   wrap.innerHTML = list.map((item,idx)=>`
     <div class="link-item block ${dragMode?'cursor-move':''}" draggable="${dragMode}" data-idx="${idx}">
-      <a href="${item.url}" target="_blank" class="block pointer-events-none">
+      <a href="${item.url}" target="_blank" class="block">
         <div class="font-medium text-base">${item.name}</div>
         <div class="text-sm text-gray-500 mt-1 break-all">${item.url}</div>
       </a>
@@ -299,7 +285,7 @@ function renderLinkList(title){
   const dom = document.getElementById('link-container');
   dom.innerHTML = list.map((item,idx)=>`
     <div class="link-item block ${dragMode?'cursor-move':''}" draggable="${dragMode}" data-idx="${idx}">
-      <a href="${item.url}" target="_blank" class="block pointer-events-none">
+      <a href="${item.url}" target="_blank" class="block">
         <div class="font-medium text-base">${item.name}</div>
         <div class="text-sm text-gray-500 mt-1 break-all">${item.url}</div>
       </a>
