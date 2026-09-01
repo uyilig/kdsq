@@ -153,8 +153,8 @@ tailwind.config = {
 <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(event)">
 
 <script>
-// 清空全部测试书签
-let data = {
+// 默认空数据
+const defaultData = {
   "home":[],
   "软件": [],
   "娱乐": {
@@ -166,6 +166,14 @@ let data = {
   "资源": [],
   "其它": []
 };
+// 读取本地存储
+let data = JSON.parse(localStorage.getItem('bookmarkData')) || defaultData;
+
+// 保存到本地存储函数
+function saveToLocal(){
+  localStorage.setItem('bookmarkData', JSON.stringify(data));
+}
+
 let currentPath = [];
 let sortType = "default";
 let dragMode = false;
@@ -383,6 +391,7 @@ function saveNewBookmark(){
     targetList = data[folderSel];
   }
   targetList.push({name,url});
+  saveToLocal();
   closeModal('modalBookmark');
   document.getElementById('bmName').value='';
   document.getElementById('bmUrl').value='';
@@ -409,6 +418,7 @@ function saveEditBookmark(){
   if(!/^https?:\/\//.test(url)) url = 'https://'+url;
   currentBookmarkList[currentBookmarkIndex].name = name;
   currentBookmarkList[currentBookmarkIndex].url = url;
+  saveToLocal();
   closeModal('modalEditBookmark');
   if(currentPath.length ===0){
     renderHomeBookmarks();
@@ -420,6 +430,7 @@ function saveEditBookmark(){
 function deleteCurrentBookmark(){
   if(!confirm("确定删除该书签？")) return;
   currentBookmarkList.splice(currentBookmarkIndex,1);
+  saveToLocal();
   document.getElementById('longPressMenu').classList.add('hidden');
   if(currentPath.length ===0){
     renderHomeBookmarks();
@@ -434,6 +445,7 @@ function saveNewFolder(){
   if(!fdName) return alert('文件夹名称不能为空');
   if(data[fdName]) return alert('文件夹已存在');
   data[fdName]=[];
+  saveToLocal();
   closeModal('modalFolder');
   backIndex();
   document.getElementById('fdName').value='';
@@ -459,6 +471,7 @@ function handleImport(e){
       const j = JSON.parse(ev.target.result);
       if(confirm("导入将覆盖当前全部书签，确定？")){
         data = j;
+        saveToLocal();
         backIndex();
       }
     }catch(err){alert('JSON文件错误')}
@@ -489,6 +502,7 @@ function bindDragEvent(container){
       const temp = realList[dragIdx];
       realList.splice(dragIdx,1);
       realList.splice(targetIdx,0,temp);
+      saveToLocal();
       if(currentPath.length===0){
         renderHomeBookmarks();
       }else{
