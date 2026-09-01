@@ -19,16 +19,16 @@ tailwind.config = {
 </script>
 <style type="text/tailwindcss">
 @layer utilities {
-  .folder-item{@apply bg-gray-100 rounded-xl p-4 cursor-pointer hover:bg-gray-200 transition-all mb-3;}
-  .link-item{@apply bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition mb-3;}
+  .folder-item{@apply bg-white py-4 cursor-pointer transition-all border-b border-gray-200 flex items-center;}
+  .link-item{@apply bg-white py-4 transition border-b border-gray-200;}
   .menu-item{@apply px-4 py-2.5 hover:bg-gray-100 cursor-pointer;}
 }
 </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen p-4">
+<body class="bg-white text-gray-800 min-h-screen px-4">
 <div class="max-w-xl mx-auto">
   <!-- 顶部标题+搜索+右上角菜单 -->
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between mb-4 pt-4">
     <h1 class="text-xl font-bold">我的书签</h1>
     <div class="relative">
       <button id="menuBtn" class="p-2">
@@ -47,18 +47,21 @@ tailwind.config = {
   <!-- 搜索框 -->
   <input id="searchInput" placeholder="搜索书签名称或网址" class="w-full border border-gray-200 rounded-lg px-4 py-2 mb-6" oninput="doSearch()">
 
-  <!-- 首页：一级文件夹，一行一个 -->
+  <!-- 首页：先渲染文件夹，再渲染首页书签 -->
   <div id="page-index">
-    <div class="folder-item" onclick="openFolder('软件')"><i class="fa fa-desktop text-xl mr-3 text-black"></i>软件</div>
-    <div class="folder-item" onclick="openFolder('娱乐')"><i class="fa fa-gamepad text-xl mr-3 text-black"></i>娱乐</div>
-    <div class="folder-item" onclick="openFolder('工具')"><i class="fa fa-wrench text-xl mr-3 text-black"></i>工具</div>
-    <div class="folder-item" onclick="openFolder('资源')"><i class="fa fa-folder-open text-xl mr-3 text-black"></i>资源</div>
-    <div class="folder-item" onclick="openFolder('其它')"><i class="fa fa-folder text-xl mr-3 text-black"></i>其它</div>
+    <div id="folderWrap">
+      <div class="folder-item" onclick="openFolder('软件')"><i class="fa fa-desktop text-xl mr-3 text-black"></i>软件</div>
+      <div class="folder-item" onclick="openFolder('娱乐')"><i class="fa fa-gamepad text-xl mr-3 text-black"></i>娱乐</div>
+      <div class="folder-item" onclick="openFolder('工具')"><i class="fa fa-wrench text-xl mr-3 text-black"></i>工具</div>
+      <div class="folder-item" onclick="openFolder('资源')"><i class="fa fa-folder-open text-xl mr-3 text-black"></i>资源</div>
+      <div class="folder-item" onclick="openFolder('其它')"><i class="fa fa-folder text-xl mr-3 text-black"></i>其它</div>
+    </div>
+    <div id="homeBookmarkWrap"></div>
   </div>
 
   <!-- 娱乐二级目录：阅读/音乐/影视，一行一个 -->
   <div id="folder-娱乐" class="hidden">
-    <div class="flex items-center mb-4">
+    <div class="flex items-center mb-4 pt-2">
       <button onclick="backIndex()" class="text-black mr-3"><i class="fa fa-arrow-left text-lg"></i></button>
       <h2 class="text-lg font-semibold">娱乐</h2>
     </div>
@@ -69,7 +72,7 @@ tailwind.config = {
 
   <!-- 书签列表页面 -->
   <div id="link-list" class="hidden">
-    <div class="flex items-center mb-4">
+    <div class="flex items-center mb-4 pt-2">
       <button onclick="backFolder()" class="text-black mr-3"><i class="fa fa-arrow-left text-lg"></i></button>
       <h2 id="list-title" class="text-lg font-semibold"></h2>
     </div>
@@ -77,12 +80,12 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- 弹窗：新建书签（增加文件夹选择下拉） -->
+<!-- 弹窗：新建书签（增加首页选项） -->
 <div id="modalBookmark" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50 p-4">
   <div class="bg-white rounded-xl w-full max-w-sm p-5">
     <h3 class="font-bold mb-4">新建书签</h3>
     <select id="bmFolderSelect" class="w-full border rounded px-3 py-2 mb-3">
-      <option value="">首页</option>
+      <option value="home">首页</option>
       <option value="软件">软件</option>
       <option value="工具">工具</option>
       <option value="资源">资源</option>
@@ -150,8 +153,9 @@ tailwind.config = {
 <input type="file" id="importFile" accept=".json" class="hidden" onchange="handleImport(event)">
 
 <script>
-// 所有文件夹内置测试书签，格式：名字在上，网址在下
+// 所有文件夹内置测试书签，增加首页书签数组
 let data = {
+  "home":[],
   "软件": [
     {name:"GitHub",url:"https://github.com"}
   ],
@@ -194,12 +198,34 @@ document.body.onclick = (e)=>{
   document.getElementById('longPressMenu').classList.add('hidden');
 }
 
+//渲染首页书签
+function renderHomeBookmarks(){
+  const wrap = document.getElementById('homeBookmarkWrap');
+  let list = data.home;
+  if(sortType === 'nameAsc') list = [...list].sort((a,b)=>a.name.localeCompare(b.name,'zh-CN'));
+  if(sortType === 'nameDesc') list = [...list].sort((a,b)=>b.name.localeCompare(a.name,'zh-CN'));
+  wrap.innerHTML = list.map((item,idx)=>`
+    <div class="link-item block ${dragMode?'cursor-move':''}" draggable="${dragMode}" data-idx="${idx}">
+      <a href="${item.url}" target="_blank" class="block pointer-events-none">
+        <div class="font-medium text-base">${item.name}</div>
+        <div class="text-sm text-gray-500 mt-1 break-all">${item.url}</div>
+      </a>
+    </div>`).join('');
+  //绑定长按（拖拽模式关闭才启用长按）
+  if(!dragMode){
+    const items = wrap.querySelectorAll('.link-item');
+    items.forEach(el=> bindLongPress(el,list));
+  }
+  if(dragMode) bindDragEvent(wrap);
+}
+
 // 回到首页
 function backIndex(){
   currentPath = [];
   document.getElementById('page-index').classList.remove('hidden');
   document.getElementById('folder-娱乐').classList.add('hidden');
   document.getElementById('link-list').classList.add('hidden');
+  renderHomeBookmarks();
 }
 // 打开一级文件夹
 function openFolder(name){
@@ -234,7 +260,32 @@ function getCurrentList(){
   if(p2) return data[p1][p2];
   return data[p1];
 }
-// 渲染链接（名字在上，网址在下 + 长按事件）
+
+//绑定长按函数
+function bindLongPress(el,list){
+  el.addEventListener('touchstart',(e)=>{
+    longPressTimer = setTimeout(()=>{
+      e.preventDefault();
+      currentBookmarkIndex = Number(el.dataset.idx);
+      currentBookmarkList = list;
+      showLongMenu(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    },600)
+  })
+  el.addEventListener('touchend',()=>clearTimeout(longPressTimer));
+  el.addEventListener('touchcancel',()=>clearTimeout(longPressTimer));
+  el.addEventListener('mousedown',()=>{
+    longPressTimer = setTimeout(()=>{
+      currentBookmarkIndex = Number(el.dataset.idx);
+      currentBookmarkList = list;
+      const rect = el.getBoundingClientRect();
+      showLongMenu(rect.left, rect.bottom);
+    },600)
+  })
+  el.addEventListener('mouseup',()=>clearTimeout(longPressTimer));
+  el.addEventListener('mouseleave',()=>clearTimeout(longPressTimer));
+}
+
+// 渲染链接（名字在上，网址在下）
 function renderLinkList(title){
   document.getElementById('page-index').classList.add('hidden');
   document.getElementById('folder-娱乐').classList.add('hidden');
@@ -254,34 +305,12 @@ function renderLinkList(title){
       </a>
     </div>`).join('');
 
-  //绑定长按
-  const items = document.querySelectorAll('.link-item');
-  items.forEach(el=>{
-    el.addEventListener('touchstart',(e)=>{
-      longPressTimer = setTimeout(()=>{
-        e.preventDefault();
-        currentBookmarkIndex = Number(el.dataset.idx);
-        currentBookmarkList = list;
-        showLongMenu(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-      },600)
-    })
-    el.addEventListener('touchend',()=>clearTimeout(longPressTimer));
-    el.addEventListener('touchcancel',()=>clearTimeout(longPressTimer));
-
-    //电脑端长按
-    el.addEventListener('mousedown',()=>{
-      longPressTimer = setTimeout(()=>{
-        currentBookmarkIndex = Number(el.dataset.idx);
-        currentBookmarkList = list;
-        const rect = el.getBoundingClientRect();
-        showLongMenu(rect.left, rect.bottom);
-      },600)
-    })
-    el.addEventListener('mouseup',()=>clearTimeout(longPressTimer));
-    el.addEventListener('mouseleave',()=>clearTimeout(longPressTimer));
-  })
-
-  if(dragMode) bindDragEvent();
+  //仅非拖拽模式启用长按
+  if(!dragMode){
+    const items = dom.querySelectorAll('.link-item');
+    items.forEach(el=> bindLongPress(el,list));
+  }
+  if(dragMode) bindDragEvent(dom);
 }
 function showLongMenu(x,y){
   const menu = document.getElementById('longPressMenu');
@@ -294,7 +323,7 @@ function showLongMenu(x,y){
 function doSearch(){
   const kw = document.getElementById('searchInput').value.trim().toLowerCase();
   if(!kw){
-    if(currentPath.length ===0) return;
+    if(currentPath.length ===0) {backIndex();return;}
     renderLinkList(currentPath.at(-1));
     return;
   }
@@ -314,8 +343,9 @@ function doSearch(){
     </div>`).join('');
 }
 function getAllBookmarks(){
-  const arr = [];
+  const arr = [...data.home];
   for(const k in data){
+    if(k === "home") continue;
     if(k==='娱乐'){
       for(const sk in data.娱乐){
         data.娱乐[sk].forEach(x=>arr.push(x));
@@ -331,7 +361,16 @@ function getAllBookmarks(){
 function openAddBookmark(){closeAllMenu(); openModal('modalBookmark');}
 function openAddFolder(){closeAllMenu(); openModal('modalFolder');}
 function openSortSelect(){closeAllMenu(); openModal('modalSort');}
-function toggleDragMode(){dragMode = !dragMode; closeAllMenu(); alert(dragMode?"拖拽排序已开启":"拖拽排序关闭"); renderLinkList(currentPath.at(-1));}
+function toggleDragMode(){
+  dragMode = !dragMode;
+  closeAllMenu();
+  alert(dragMode?"拖拽排序已开启（长按编辑暂时关闭）":"拖拽排序关闭，长按编辑恢复");
+  if(currentPath.length ===0){
+    renderHomeBookmarks();
+  }else{
+    renderLinkList(currentPath.at(-1));
+  }
+}
 function importBookmark(){closeAllMenu(); document.getElementById('importFile').click();}
 function exportBookmark(){closeAllMenu(); downloadJson(data,"bookmark.json");}
 
@@ -340,7 +379,7 @@ function openModal(id){document.getElementById(id).classList.remove('hidden');}
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 function closeAllMenu(){menuPanel.classList.add('hidden');}
 
-//保存新书签（支持选择存放目录）
+//保存新书签（支持首页）
 function saveNewBookmark(){
   const folderSel = document.getElementById('bmFolderSelect').value;
   const name = document.getElementById('bmName').value.trim();
@@ -349,9 +388,8 @@ function saveNewBookmark(){
   if(!/^https?:\/\//.test(url)) url = 'https://'+url;
 
   let targetList;
-  if(!folderSel){
-    alert('首页暂不支持直接放书签，请选择文件夹');
-    return;
+  if(folderSel === 'home'){
+    targetList = data.home;
   }else if(folderSel.indexOf('娱乐-')===0){
     const sub = folderSel.replace('娱乐-','');
     targetList = data.娱乐[sub];
@@ -363,7 +401,11 @@ function saveNewBookmark(){
   document.getElementById('bmName').value='';
   document.getElementById('bmUrl').value='';
   document.getElementById('bmFolderSelect').value='';
-  if(currentPath.length>0) renderLinkList(currentPath.at(-1));
+  if(currentPath.length===0){
+    renderHomeBookmarks();
+  }else{
+    renderLinkList(currentPath.at(-1));
+  }
 }
 
 //编辑书签
@@ -382,14 +424,22 @@ function saveEditBookmark(){
   currentBookmarkList[currentBookmarkIndex].name = name;
   currentBookmarkList[currentBookmarkIndex].url = url;
   closeModal('modalEditBookmark');
-  renderLinkList(currentPath.at(-1));
+  if(currentPath.length ===0){
+    renderHomeBookmarks();
+  }else{
+    renderLinkList(currentPath.at(-1));
+  }
 }
 //删除书签
 function deleteCurrentBookmark(){
   if(!confirm("确定删除该书签？")) return;
   currentBookmarkList.splice(currentBookmarkIndex,1);
   document.getElementById('longPressMenu').classList.add('hidden');
-  renderLinkList(currentPath.at(-1));
+  if(currentPath.length ===0){
+    renderHomeBookmarks();
+  }else{
+    renderLinkList(currentPath.at(-1));
+  }
 }
 
 //新建文件夹（仅一级目录）
@@ -406,7 +456,11 @@ function saveNewFolder(){
 function setSort(type){
   sortType = type;
   closeModal('modalSort');
-  renderLinkList(currentPath.at(-1));
+  if(currentPath.length ===0){
+    renderHomeBookmarks();
+  }else{
+    renderLinkList(currentPath.at(-1));
+  }
 }
 
 //导入导出
@@ -437,21 +491,30 @@ function downloadJson(obj,filename){
 
 //拖拽排序
 let dragIdx = null;
-function bindDragEvent(){
-  const items = document.querySelectorAll('.link-item[draggable=true]');
+function bindDragEvent(container){
+  const items = container.querySelectorAll('.link-item[draggable=true]');
   items.forEach(el=>{
     el.ondragstart = e=>{dragIdx = Number(e.target.dataset.idx)};
     el.ondragover = e=>e.preventDefault();
     el.ondrop = e=>{
       e.preventDefault();
       const targetIdx = Number(e.currentTarget.dataset.idx);
-      const list = getCurrentList();
-      const temp = list[dragIdx];
-      list.splice(dragIdx,1);
-      list.splice(targetIdx,0,temp);
-      renderLinkList(currentPath.at(-1));
+      const realList = currentPath.length===0 ? data.home : getCurrentList();
+      const temp = realList[dragIdx];
+      realList.splice(dragIdx,1);
+      realList.splice(targetIdx,0,temp);
+      if(currentPath.length===0){
+        renderHomeBookmarks();
+      }else{
+        renderLinkList(currentPath.at(-1));
+      }
     }
   })
+}
+
+//页面初始化加载首页书签
+window.onload = ()=>{
+  renderHomeBookmarks();
 }
 </script>
 </body>
